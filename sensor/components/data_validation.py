@@ -17,6 +17,7 @@ class DataValidation:
         try:
             logging.info(f"{'>>'*20} Data Validation {'<<'*20}")
             self.data_validation_config = data_validation_config
+            self.data_ingestion_artifact=data_ingestion_artifact
             self.validation_error=dict()
         except Exception as e:
             raise SensorException(e, sys)
@@ -35,7 +36,7 @@ class DataValidation:
             threshold = self.data_validation_config.missing_threshold
             null_report = df.isna().sum()/df.shape[0]
             #selecting column name which contains null values
-            logging.info(f"selecting column name which contains null valuesabove to {threshold}")
+            logging.info(f"selecting column name which contains null values above to {threshold}")
             drop_column_names = null_report[null_report>threshold].index
 
             logging.info(f"Columns to drop: {list(drop_column_names)}")
@@ -57,10 +58,10 @@ class DataValidation:
             current_columns = current_df.columns
 
             missing_columns = []
-            for base_columns in base_columns:
-                if base_columns in current_columns:
+            for base_column in base_columns:
+                if base_column not in current_columns:
                     logging.info(f"Column: [{base} is not available.]")
-                    missing_columns.append(base_columns)
+                    missing_columns.append(base_column)
 
             if len(missing_columns)>0:
                 self.validation_error[report_key_name]=missing_columns
@@ -85,12 +86,12 @@ class DataValidation:
                 if same_distribution.pvalue>0.05:
                     # We are accepting null hypothesis
                     drift_report[base_column]={
-                        "pvalue":float(same_distribution.pvalue),
+                        "pvalues":float(same_distribution.pvalue),
                         "same_distribution": True
                     }
                 else:
                     drift_report[base_column]={
-                        "pvalue":float(same_distribution.pvalue),
+                        "pvalues":float(same_distribution.pvalue),
                         "same_distribution": False
                     }
                     #different distribution
@@ -98,8 +99,6 @@ class DataValidation:
 
         except Exception as e:
             raise SensorException(e, sys)
-
-
 
     def initiate_data_validation(self)->artifact_entity.DataValidationArtifact:
         try:
@@ -121,7 +120,7 @@ class DataValidation:
             logging.info(f"Drop null values columns from test df")
             test_df = self.drop_missing_values_columns(df=test_df,report_key_name="missing_values_within_test_dataset")
 
-            exclude_columns = ["class"]
+            exclude_columns = [TARGET_COLUMN]
             base_df = utils.convert_columns_float(df=base_df, exclude_columns=exclude_columns)
             train_df = utils.convert_columns_float(df=train_df, exclude_columns=exclude_columns)
             test_df = utils.convert_columns_float(df=test_df, exclude_columns=exclude_columns)
