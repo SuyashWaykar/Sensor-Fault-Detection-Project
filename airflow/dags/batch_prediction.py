@@ -57,4 +57,7 @@ with DAG(
 
     )
 
+#<<<<<<< HEAD
     download_input_files >> generate_prediction_files >> upload_prediction_files
+
+#>>>>>>> dd567e5e199ffa533adefd0f3359b78683b3c855
